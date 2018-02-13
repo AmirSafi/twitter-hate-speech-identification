@@ -10,6 +10,13 @@ Source : https://data.world/crowdflower/hate-speech-identification
 #setwd("C:\\Users\\Richard\\Desktop\\MSIM Coursework\\Winter 2018\\INFX 573\\Research\\crowdflower-hate-speech-identification\\crowdflower-hate-speech-identification\\data")
 setwd("~/Dropbox/MSIM/INFX573/INFX573CourseProject")
 
+
+## Richard was here
+#..
+
+
+
+
 # Load the dataset 
 data <- read.csv('data/twitter_hate_speech_classifier_dfe_a845520.csv')
 dataL <- read.csv('data/labeled_data.csv')
