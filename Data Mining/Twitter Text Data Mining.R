@@ -20,22 +20,26 @@ library(httr)
 ## MAKE AN ACCOUNT AND ENTER IN YOUR CREDENTIALS FROM HERE:
 # http://docs.inboundnow.com/guide/create-twitter-application/
 # Set API Keys
-api_key <- "********"
-api_secret <- "********"
-access_token <- "****************"
-access_token_secret <- "********"
+api_key <- "xOnMCl2XZQf96M3S0E8ebGiEV"
+api_secret <- "uSKcaXSklvu69wwLdymo0nZhgaKk6cHpiNTSGzas9Yg6hEq9NZ"
+access_token <- "67433123-AZezkqDJswd011NJHjNTTDOwvCWyVfqmgFxd6MqsW"
+access_token_secret <- "cZihVqQ2eKW5lnyS6IMaxh0gaQsLI54u1Euly82GUEGtw"
 setup_twitter_oauth(api_key, api_secret, access_token, access_token_secret)
 
 # You are in.
 # Grab latest tweets
 tweets_sanders <- searchTwitter('@BernieSanders', n=1500)
 
+tweets_random <- searchTwitter('hashtag', since = '2017-01-01' , n=1500)
+feed_random <- laply(tweets_random, function(t) t$getText())
 # Loop over tweets and extract text
 library(plyr)
 feed_sanders = laply(tweets_sanders, function(t) t$getText())
 
+feed_sanders_screenName = laply(tweets_sanders, function(t) t$getScreenName())
+
 ######## Set working directory
-setwd("C:\\Users\\Richard\\Desktop\\DS1_Research\\Data Mining")
+setwd("~/Dropbox/MSIM/INFX573/Course_Project/twitter-hate-speech-identification/Data Mining")
 
 # Hu and Liu opinion lexicon 5000 words
 # Unpack it
@@ -88,15 +92,16 @@ score.sentiment = function(sentences, good_text, bad_text, .progress='none') {
     return(scores.df)
 }
 
-
 ### This references a field not defined
 # # Call the function and return a data frame
-# feelthabern <- score.sentiment(feed_sanders, good_text, bad_text, .progress='text')
+feelthabern <- score.sentiment(feed_sanders, good_text, bad_text, .progress='text')
+
+random_tweetScore <- score.sentiment(feed_random, good_text, bad_text, .progress='text')
 # # Cut the text, just gets in the way
-# plotdat <- feelthabern#[c("name", "score")]
+plotdat <- feelthabern[c("name", "score")]
 # # Remove neutral values of 0
-# plotdat <- plotdat[!plotdat$score == 0, ]
+plotdat <- plotdat[!plotdat$score == 0, ]
 # 
 # # Nice little quick plot
-# qplot(factor(score), data=plotdat, geom="bar", 
-#       xlab = "Sentiment Score")
+qplot(factor(score), data=plotdat, geom="bar", 
+      xlab = "Sentiment Score")
