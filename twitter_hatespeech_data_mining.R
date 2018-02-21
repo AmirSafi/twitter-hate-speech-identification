@@ -31,7 +31,7 @@ setup_twitter_oauth(api_key, api_secret, access_token, access_token_secret)
 
 # Grab random tweets before and after the election 
 # The API is only giving me random tweets from today - Will look into this -Amir 
-tweets_post_election <- searchTwitter('hashtag', since = '2016-11-08' , n=1000)
+tweets_post_election <- searchTwitter('trump', since = '2016-11-08' , n=1000)
 #tweets_pre_election <- searchTwitter('hashtag', since = '2016-01-01', until = '2016-11-08' , n=1500)
 #tweets_post_election <- searchTwitter('hashtag', n=1500)
 
@@ -44,10 +44,13 @@ post_latitude <- lapply(tweets_post_election, function(t) t$getLatitude())
 post_longitude <- lapply(tweets_post_election, function(t) t$getLongitude())
 # Get the retweet count for each tweet 
 post_retweetcount <- lapply(tweets_post_election, function(t) t$getRetweetCount())
+
+post_tweetdate <- lapply(tweets_post_election, function(t) t$getCreated())
 # Other fields that are aviable include 
 #getCreated, getFavoriteCount, getFavorited, getId, getIsRetweet, getLatitude, getLongitude,
 #..  getReplyToSID, getReplyToSN, getReplyToUID, getRetweetCount, getRetweeted, getRetweeters, getRetweets,
 #..  getScreenName, getStatusSource, getText, getTruncated, getUrls,
+
 
 # Create a dataframe and save tweets to csv file 
 tweets_post.df <- twListToDF(tweets_post_election)
