@@ -3,24 +3,46 @@
 # Set working directory 
 setwd("/Users/amir/Dropbox/MSIM/INFX573/Course_Project/twitter-hate-speech-identification")
 
-# Importing the dataset
-dataset_original = read.csv('data/labeled_data.csv', sep = ",")
-
 # Install needed packages if necessary
-pkgs <- c('tm','SnowballC', 'caTools', 'randomForest', 'ROCR')
+pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet','ROCR')
 for (pkg in pkgs) {
         if(!(pkg %in% rownames(installed.packages()))) {
                 install.packages(pkg)
         }
 }
 # Load the libraries 
+library(jsonlite)
 library(tm)
 library(SnowballC)
 library(caTools)
 library(randomForest)
+# Elastic net model paths for some generalized linear models
+library(glmnet)
+# Multinomial regression 
+library("nnet")
 library (ROCR)
+
+# Importing the dataset
+dataset_original = read.csv('data/labeled_data.csv', sep = ",")
 colnames(dataset_original)
-corpus = VCorpus(VectorSource(dataset_original$tweet))
+rows_original = nrow(dataset_original)
+
+# Import other tweets to fold into the matrix 
+trump_tweet <- fromJSON("data/condensed_2018.json", flatten=TRUE)
+colnames(trump_tweet)
+rows_trump = nrow(trump_tweet)
+
+# Joined dataset 
+d1 = data.frame(dataset_original$tweet , stringsAsFactors = FALSE)
+colnames(d1) = "tweet"
+d2 = data.frame(trump_tweet$text, stringsAsFactors = FALSE)
+colnames(d2) = "tweet"
+all_tweets = rbind(d1,d2)
+#d3
+
+
+# Create a corpus
+corpus = VCorpus(VectorSource(all_tweets))
 corpus = tm_map(corpus, content_transformer(tolower))
 corpus = tm_map(corpus, removeNumbers)
 corpus = tm_map(corpus, removePunctuation)
@@ -32,21 +54,42 @@ corpus = tm_map(corpus, stripWhitespace)
 dtm = DocumentTermMatrix(corpus)
 dtm = removeSparseTerms(dtm, 0.999)
 dataset = as.data.frame(as.matrix(dtm))
-dataset$hate_speech = dataset_original$hate_speech
-# Encoding the target feature as factor
-dataset$hate_speech = factor(dataset$hate_speech, levels = c(0, 1, 2, 3))
+
+# Split original labeled and new tweets
+original = dataset[1:rows_original,]
+
+trump = dataset[rows_original:nrow(dataset),]
+
+dataset$class = dataset_original$class
+# Encoding the target feature as a factor
+dataset$class = factor(dataset$class, levels = c(0, 1, 2))
+# Target variable / true classification of the tweet 
+response = dataset$class
+# Remove the target variable from the training data
+dataset = dataset[, !names(dataset) %in% "class"]
 
 # Splitting the dataset into the Training set and Test set
 set.seed(1)
-split = sample.split(dataset$hate_speech, SplitRatio = 0.8)
-training_set = subset(dataset, split == TRUE)
-test_set = subset(dataset, split == FALSE)
+#split = sample.split(dataset$class, SplitRatio = 0.8)
+#training_set = subset(dataset, split == TRUE)
+#test_set = subset(dataset, split == FALSE)
+#numCol = ncol(training_set)
 
-# Fitting Random Forest Classification to the Training set
-numCol = ncol(training_set)
-classifier = randomForest(x = training_set[-numCol],
-                          y = training_set$hate_speech,
-                          ntree = 10)
+# Fitting Several different classifiers on the training set
+t1 = Sys.time()
+#classifier = randomForest(x = training_set[-numCol],
+#                          y = training_set$class,
+#                          ntree = 10)
+
+classifier = randomForest(x = dataset,
+                          y = response,
+                          ntree = 2)
+
+print(difftime(Sys.time(), t1, units = 'mins'))
+
+print(classifier)
+
+
 # Predicting the Test set results
 y_pred = predict(classifier, newdata = test_set[-numCol])
 # Making the Confusion Matrix
