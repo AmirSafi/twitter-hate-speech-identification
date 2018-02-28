@@ -27,22 +27,31 @@ dataset_original = read.csv('data/labeled_data.csv', sep = ",")
 colnames(dataset_original)
 rows_original = nrow(dataset_original)
 
-# Import other tweets to fold into the matrix 
+# Import trump tweets to fold into the matrix 
 trump_tweet <- fromJSON("data/condensed_2018.json", flatten=TRUE)
 colnames(trump_tweet)
 rows_trump = nrow(trump_tweet)
 
-# Joined dataset 
-d1 = data.frame(dataset_original$tweet , stringsAsFactors = FALSE)
-colnames(d1) = "tweet"
-d2 = data.frame(trump_tweet$text, stringsAsFactors = FALSE)
-colnames(d2) = "tweet"
-all_tweets = rbind(d1,d2)
-#d3
+# Import random tweets fold into the matrix 
+# feb 17-24 2018
+recent = read.csv("random tweets.csv")
+colnames(recent)
+rows_recent = nrow(recent)
 
+# Joined dataset 
+d1 = data.frame((as.factor(dataset_original$tweet)))
+colnames(d1) = "tweet"
+d2 = data.frame((as.factor(trump_tweet$text)))
+colnames(d2) = "tweet"
+d3 = data.frame(as.factor(recent$Text))
+colnames(d3) = "tweet"
+
+all_tweets = rbind(d1,d2,d3)
 
 # Create a corpus
-corpus = VCorpus(VectorSource(all_tweets))
+library(stringr)
+all_tweets$tweet <- str_replace_all(all_tweets$tweet,"([^A-Za-z0-9 ])+", " ")
+corpus = VCorpus(VectorSource(all_tweets$tweet))
 corpus = tm_map(corpus, content_transformer(tolower))
 corpus = tm_map(corpus, removeNumbers)
 corpus = tm_map(corpus, removePunctuation)
@@ -56,17 +65,16 @@ dtm = removeSparseTerms(dtm, 0.999)
 dataset = as.data.frame(as.matrix(dtm))
 
 # Split original labeled and new tweets
-original = dataset[1:rows_original,]
+training = dataset[1:rows_original,]
+trump.dtm = dataset[(rows_original+1):(rows_original+rows_trump),]
+recent.dtm = dataset[(rows_original+rows_trump +1):(rows_original+rows_trump+rows_recent),]
 
-trump = dataset[rows_original:nrow(dataset),]
 
-dataset$class = dataset_original$class
+
 # Encoding the target feature as a factor
-dataset$class = factor(dataset$class, levels = c(0, 1, 2))
+response = dataset_original$class
+response = factor(dataset_original$class, levels = c(0, 1, 2))
 # Target variable / true classification of the tweet 
-response = dataset$class
-# Remove the target variable from the training data
-dataset = dataset[, !names(dataset) %in% "class"]
 
 # Splitting the dataset into the Training set and Test set
 set.seed(1)
@@ -80,14 +88,18 @@ t1 = Sys.time()
 #classifier = randomForest(x = training_set[-numCol],
 #                          y = training_set$class,
 #                          ntree = 10)
-
-classifier = randomForest(x = dataset,
+classifier = randomForest(x = training,
                           y = response,
-                          ntree = 2)
-
+                          ntree = 1)
 print(difftime(Sys.time(), t1, units = 'mins'))
-
 print(classifier)
+
+
+# Predict trumps tweet 
+trump_pred = predict(classifier, newdata = trump.dtm)
+recent_pred = predict(classifier, newdata = recent.dtm)
+trump_tweet$class = trump_pred
+recent$class = recent_pred
 
 
 # Predicting the Test set results
