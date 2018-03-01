@@ -2,9 +2,12 @@
 
 # Set working directory 
 setwd("/Users/amir/Dropbox/MSIM/INFX573/Course_Project/twitter-hate-speech-identification")
+# richard
+setwd("C:/Users/Richard/Desktop/MSIM Coursework/Winter 2018/INFX 573/Final Project/twitter-hate-speech-identification")
 
 # Install needed packages if necessary
-pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet','ROCR', 'rpart')
+pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet','ROCR', 'rpart',
+          'stringr', 'chron')
 for (pkg in pkgs) {
         if(!(pkg %in% rownames(installed.packages()))) {
                 install.packages(pkg)
@@ -12,6 +15,7 @@ for (pkg in pkgs) {
 }
 # Load the libraries 
 library(jsonlite)
+library(chron) # datetimes
 library(tm)
 library(SnowballC)
 library(caTools)
@@ -137,8 +141,6 @@ training = dataset[1:rows_original,]
 trump.dtm = dataset[(rows_original+1):(rows_original+rows_trump),]
 recent.dtm = dataset[(rows_original+rows_trump +1):(rows_original+rows_trump+rows_recent),]
 
-
-
 # Encoding the target feature as a factor
 response = dataset_original$class
 response = factor(dataset_original$class, levels = c(0, 1, 2))
@@ -159,7 +161,6 @@ t1 = Sys.time()
 classifier = randomForest(x = training,
                           y = response,
                           ntree = 1)
-
 # Decision tree classifier 
 tree_clf = rpart(response ~ . , method="class", data=training)
 
@@ -173,15 +174,45 @@ logit_clf = multinom(response ~.,training)
 print(difftime(Sys.time(), t1, units = 'mins'))
 print(classifier)
 
-
 # Predict trumps tweet 
 trump_pred = predict(classifier, newdata = trump.dtm)
 recent_pred = predict(classifier, newdata = recent.dtm)
 trump_tweet$class = trump_pred
 recent$class = recent_pred
 
+# Verify rows match input trump tweet data
+sum(diff(as.numeric(names(trump_pred)))!=1) # good!
 
-table(trump_tweet$class)
+as.data.frame(lapply(table(trump_tweet$class), function(x) x/nrow(trump_tweet)))
+
+
+
+## Make datetime field
+mo <- c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')
+months <- c(paste('0', 1:9, sep=''),'10','11','12')
+
+dt_parts <- sapply(trump_tweet$created_at, function(row) strsplit(row, ' '))
+year  <- unlist(lapply(dt_parts, function(part) part[6]))
+month <- unlist(lapply(dt_parts, function(part) months[mo==part[2]]))
+day   <- unlist(lapply(dt_parts, function(part) part[3]))
+dtime <- unlist(lapply(dt_parts, function(part) part[4]))
+# Call it 'dt_num'
+trump_tweet$dt_num <- as.numeric(chron(dates=paste(year,month,day,sep='-'), times=dtime, 
+                             format=c('y-m-d', 'h:m:s')))
+
+# Can call as.chron(dt_num) to get date-looking things back
+as.chron(17000) # use as.numeric to return to fractional days since 1970 Jan 1
+
+# Plot # followers against time
+tt <- trump_tweet
+tt <- trump_tweet[seq(0,nrow(trump_tweet),by=10),]
+with(subset(tt, dt_num>16500), plot(dt_num, followers_count))
+# Mark dates
+abline(v=as.numeric(chron('11/08/16')), col='purple', lwd=2) # Election
+abline(v=as.numeric(chron('06/16/15')), col='blue', lwd=2) # Presidential Bid
+abline(v=as.numeric(chron('05/03/16')), col='red', lwd=2) # Became presumptive nominee
+
+with(tt, plot(dt_num, retweet_count, add=T))
 
 
 # Predicting the Test set results
