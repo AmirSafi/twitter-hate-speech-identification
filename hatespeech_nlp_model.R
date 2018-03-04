@@ -7,7 +7,7 @@ setwd("C:/Users/Richard/Desktop/MSIM Coursework/Winter 2018/INFX 573/Final Proje
 
 # Install needed packages if necessary
 pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet','ROCR', 'rpart',
-          'stringr', 'chron')
+          'stringr', 'chron', 'caret', 'mlbench')
 for (pkg in pkgs) {
         if(!(pkg %in% rownames(installed.packages()))) {
                 install.packages(pkg)
@@ -29,6 +29,8 @@ library (ROCR)
 library(e1071)
 # Classification Tree with rpart
 library(rpart)
+library(mlbench)
+library(caret)
 
 # Importing the dataset
 dataset_original = read.csv('data/labeled_data.csv', sep = ",")
@@ -147,6 +149,7 @@ response = factor(dataset_original$class, levels = c(0, 1, 2))
 # Target variable / true classification of the tweet 
 
 # Splitting the dataset into the Training set and Test set
+seed <- 1
 set.seed(1)
 #split = sample.split(dataset$class, SplitRatio = 0.8)
 #training_set = subset(dataset, split == TRUE)
@@ -161,14 +164,43 @@ t1 = Sys.time()
 classifier = randomForest(x = training,
                           y = response,
                           ntree = 1)
+# Grid Search
+# Create model with default paramters
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+metric <- "Accuracy"
+mtry <- sqrt(ncol(training))
+tunegrid <- expand.grid(.mtry=mtry)
+rf_default <- train(response ~ ., data=training, method="rf", metric=metric, tuneGrid=tunegrid, trControl=control)
+print(rf_default)
+# 1 - Tune using 'caret' package
+# Random Search
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="random")
+set.seed(seed)
+mtry <- sqrt(ncol(training))
+rf_random <- train(response ~ ., data=training, method="rf", metric=metric, tuneLength=15, trControl=control)
+print(rf_random)
+plot(rf_random)
+
+# Grid Search
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+set.seed(seed)
+tunegrid <- expand.grid(.mtry=c(1:15))
+rf_gridsearch <- train(response ~ ., data=training, method="rf", metric=metric, tuneGrid=tunegrid, trControl=control)
+print(rf_gridsearch)
+plot(rf_gridsearch)
+
+set.seed(seed)
+bestmtry <- tuneRF(training, response, stepFactor=1.5, improve=1e-5, ntree=500)
+print(bestmtry)
+
 # Decision tree classifier 
-tree_clf = rpart(response ~ . , method="class", data=training)
+#tree_clf = rpart(response ~ . , method="class", data=training)
 
 # Linear SVM 
-svm_clf = svm(response ~ ., training)
+#svm_clf = svm(response ~ ., training)
 
 # Logistic regression model 
-logit_clf = multinom(response ~.,training)
+#logit_clf = multinom(response ~.,training)
 
 
 print(difftime(Sys.time(), t1, units = 'mins'))
