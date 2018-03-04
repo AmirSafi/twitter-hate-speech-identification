@@ -1,10 +1,11 @@
 # Natural Language Processing
 
 # Set working directory 
-setwd("/Users/amir/Dropbox/MSIM/INFX573/Course_Project/twitter-hate-speech-identification")
+#setwd("/Users/amir/Dropbox/MSIM/INFX573/Course_Project/twitter-hate-speech-identification")
 # richard
-setwd("C:/Users/Richard/Desktop/MSIM Coursework/Winter 2018/INFX 573/Final Project/twitter-hate-speech-identification")
-
+#setwd("C:/Users/Richard/Desktop/MSIM Coursework/Winter 2018/INFX 573/Final Project/twitter-hate-speech-identification")
+#VM
+setwd("/home/amir19/twitter-hate-speech-identification")
 # Install needed packages if necessary
 pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet','ROCR', 'rpart',
           'stringr', 'chron', 'caret', 'mlbench')
