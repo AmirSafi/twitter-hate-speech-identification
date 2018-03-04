@@ -11,7 +11,8 @@ pkgs <- c('jsonlite','tm','SnowballC', 'caTools', 'randomForest','glmnet', 'nnet
           'stringr', 'chron', 'caret', 'mlbench')
 for (pkg in pkgs) {
         if(!(pkg %in% rownames(installed.packages()))) {
-                install.packages(pkg)
+                install.packages(pkg, dependencies=TRUE, repos='http://cran.rstudio.com/')
+                #install.packages(pkg)
         }
 }
 # Load the libraries 
