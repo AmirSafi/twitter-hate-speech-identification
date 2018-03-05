@@ -84,7 +84,7 @@ colnames(trump_tweet_2011)[n == 'text'] = 'tweet'
 colnames(trump_tweet_2011)[n == 'user.followers_count'] = 'followers_count'
 trump_tweet_2011 = trump_tweet_2011[,keeps]
 
-trump_tweet_2010 <- fromJSON("data/master_2011.json", flatten=TRUE)
+trump_tweet_2010 <- fromJSON("data/master_2010.json", flatten=TRUE)
 n = colnames(trump_tweet_2010)
 colnames(trump_tweet_2010)[n == 'text'] = 'tweet'
 colnames(trump_tweet_2010)[n == 'user.followers_count'] = 'followers_count'
@@ -164,7 +164,7 @@ t1 = Sys.time()
 # Random forest classifier 
 classifier = randomForest(x = training,
                           y = response,
-                          ntree = 5)
+                          ntree = 9)
 print(difftime(Sys.time(), t1, units = 'mins'))
 print(classifier)
 
@@ -268,3 +268,7 @@ precision = diag / colsums
 recall = diag / rowsums 
 f1 = 2 * precision * recall / (precision + recall) 
 data.frame(precision, recall, f1) 
+
+
+
+write.csv(trump_tweet, file = "trump_tweet.csv")
