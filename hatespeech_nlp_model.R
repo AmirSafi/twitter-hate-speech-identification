@@ -161,11 +161,13 @@ set.seed(1)
 
 # Fitting Several different classifiers on the training set
 t1 = Sys.time()
-
 # Random forest classifier 
 classifier = randomForest(x = training,
                           y = response,
-                          ntree = 1)
+                          ntree = 5)
+print(difftime(Sys.time(), t1, units = 'mins'))
+print(classifier)
+
 # Grid Search
 # Create model with default paramters
 control <- trainControl(method="repeatedcv", number=10, repeats=3)
